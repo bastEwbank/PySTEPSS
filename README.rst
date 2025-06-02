@@ -1,5 +1,44 @@
 About
 -----
+PySTEPSS is a Python interface that facilitates the use of the STEPSS software suite
+which is a collection of tools for the simulation and analysis of power systems.
+See : https://thierryvancutsem.github.io/home/software.html
+
+Here is the diffents tools included in the STEPSS suite:
+- PFC: Power Flow Calculator
+- RAMSES: a dynamic simulator for power systems
+- CODEGEN: a generator of fortran code thats describe models for the RAMSES simulator
+
+How to install
+--------------
+Venv installation guidelines while this project is in development:
+
+1. Create a virtual environment in your project working directory
+with this command line:
+   ```
+   python -m venv venv
+   ``` 
+2. Activate the virtual environment:
+   - On Windows:
+     ```
+     venv\Scripts\activate
+     ```
+   - On Linux or MacOS:
+     ```
+     source venv/bin/activate
+     ```
+3. Install the local package with this command line 
+(replace `/full/path/to/my_package` with the actual path to your package which 
+is the directory containing the `setup.py` file):
+   ```
+   pip install -e /full/path/to/my_package
+   ```
+
+-e option means "editable" mode, which allows you to modify the code your package
+and see the changes immediately without reinstalling the package.
+
+From Forked Repository (Petros Aristidou):
+------------------------------------------
 
 PyRAMSES is a Python module that facilitates the use of the dynamic simulator RAMSES. The module provides basic functionality like defining test-cases, running a simulation, extracting information, etc. As well as more advanced integration of the simulator into the remaining Python code.
 
