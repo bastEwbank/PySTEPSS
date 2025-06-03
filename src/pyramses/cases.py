@@ -6,6 +6,9 @@ import os
 import tempfile
 import warnings
 
+from pathlib import Path
+import time
+
 from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
 warnings.showwarning = CustomWarning
@@ -142,7 +145,110 @@ class cfg(object):
             text_file.write(cmdFile)
             text_file.close()
             return 0
+    
+    def writeStepssCfgFile(self, userFile=None):
+        """Write equivalent Stepss configuration file for the use of  Java-based GUI.
 
+        :param str userFile: The filename to write to (Optional). The complete path can be given or
+                             a the path relative to the working directory (os.getcwd()). If a file is not given, then a
+                             temporary is created and deleted when the object is destroyed.
+        """
+        cfgFile = ""
+
+
+        
+
+        try:
+            #Write the first line of the file which is a time stamp comment
+            cfgFile += f'#{time.strftime("%a %b %d %H:%M:%S %Z %Y", time.localtime())}\n'
+
+            ##TO BE CHANGED - Unkown field by B.Ewbank, should ask TVC or Petros
+            cfgFile +='GP_REFRESH_RATE=\n'
+            
+            #Data files
+            i=1
+            for file in self._dataset:
+                if i > 10 :
+                    break
+                cfgFile+= f"fileData{i}={str(Path(file).resolve()).replace('\\', '\\\\')}\n"
+                i += 1
+
+            if i <= 10:
+                for j in range(i, 11):
+                    cfgFile += f'fileData{j}=\n'   
+            
+            #Disturbance file
+            if self._dstset:
+                cfgFile += 'fileDist=' + str(Path(self._dstset[0]).resolve()).replace('\\', '\\\\') + '\n'
+            else:
+                cfgFile += 'fileDist=\n'
+            
+            #Observable file
+            if self._obs:
+                cfgFile += 'fileObs=' + str(Path(self._obs[0]).resolve()).replace('\\', '\\\\') + '\n'
+            else:
+                cfgFile += 'fileObs=\n'
+            
+            #Unkown field by B.Ewbank, should ask TVC or Petros
+            cfgFile += 'observFileWizButton=false\n'
+
+            #Runtime observables
+            j = 0
+            for i in range(0,3) :
+                if i == 0:
+                    cfgFile += 'runtimeObsName='
+                else:
+                    cfgFile += f'runtimeObsName{i}='
+                
+                if len(self._runobs)>j:
+                        run_obs = self._runobs[j]
+                        cfgFile += run_obs
+                        j += 1
+                 
+                cfgFile += '\n'
+
+            j=0    
+            for i in range(0, 3):    
+                if i == 0:
+                    cfgFile += 'runtimeObsType='
+                else:
+                    cfgFile += f'runtimeObsType{i}='
+
+                if len(self._runobs)>j:
+                        run_obs = self._runobs[j]
+                        cfgFile += run_obs
+                        j += 1
+                else:
+                    cfgFile += '0'
+
+                cfgFile += '\n'
+
+            #TO BE CHANGED - Final flags Hardcoded :
+            cfgFile += 'saveContTrace=false\n'
+            cfgFile += 'saveDiscTrace=false\n'
+            cfgFile += 'saveDumpButton=false\n'
+            cfgFile += 'saveOutputTrajButton=true\n'
+
+
+
+
+        except IOError as e:
+            raise IOError("RAMSES: I/O error({0}): {1}".format(e.errno, e.strerror))
+
+
+        if userFile == None:
+            return cfgFile
+        else:
+            if not userFile.endswith('.cfg'):
+                userFile += '.cfg'
+
+            if os.path.isfile(userFile):
+                warnings.warn('The file %s already exists. It will be overwritten!' % (userFile))
+            text_file = open(userFile, "w")
+            text_file.write(cfgFile)
+            text_file.close()
+            return 0
+        
     # def __del__(self):
         # silentremove(self._cmdfile.name)
 
@@ -465,3 +571,22 @@ class cfg(object):
         
         """
         del self._dstset[:]
+
+    def getAllCfg(self):
+        """Get all configuration parameters
+        
+        :returns: dictionary with all configuration parameters
+        :rtype: dict
+        
+        """
+        return {
+            'out': self._out,
+            'dataset': self._dataset,
+            'dstset': self._dstset,
+            'runobs': self._runobs,
+            'init': self._init,
+            'disc': self._disc,
+            'cont': self._cont,
+            'obs': self._obs,
+            'trj': self._trj
+        }
