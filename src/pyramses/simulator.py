@@ -12,6 +12,8 @@ import datetime
 import numpy as np
 from scipy.sparse import coo_matrix
 
+import subprocess
+
 from .cases import cfg
 from .globals import RAMSESError, CustomWarning, __libdir__, wrapToList
 
@@ -26,7 +28,7 @@ class sim(object):
     # print(__libdir__)
     # print(os.path.join(__libdir__,"ramses.dll"))
 
-    def __init__(self, custLibDir = None):
+    def __init__(self, custLibDir = None, executable=False):
         """Initialize the DLL libraries."""
         if custLibDir is None:
             ramLibDir = __libdir__
@@ -911,3 +913,65 @@ class sim(object):
 
     
 #int get_MDL_names(int mxreclen, char *DLL_Names);
+
+class sim_exe(sim):
+    """This class is used to run RAMSES as an executable. 
+    It inherits from the sim class and overrides the __init__ method 
+    to load the RAMSES executable instead of the shared library."""
+
+    def __init__(self, ramses_exe=None):
+        """Initialize the simulator with the path to the RAMSES executable."""
+        if ramses_exe is None:
+            ramses_exe = 'URAMSES.exe'
+
+        sim.ramsesCount += 1
+        self._ramsesNum = sim.ramsesCount  # This is the current instance of Ramses
+
+    def __del__(self):
+        warnings.warn("Simulator Exe with number %i was deleted." % self._ramsesNum)
+
+        sim.ramsesCount -= 1
+        return   
+    
+    def execSim(self, cmd, pause=None):
+        """Run a simulation with .exe file.
+
+        :param cmd: provides the case description
+        :type cmd: type(:class:`.cfg`)
+        :param t_pause: pause time (optional). If not given, the simulation will run until the end as described in the dst file.
+        :type t_pause: float
+
+        :Example:
+
+        >>> import pyramses
+        >>> ram= pyramses.sim_exe()
+        >>> case = pyramses.cfg("cmd.txt")
+        >>> ram.execSim(case) # start simulation
+
+        .. note:: If you have an existing command file, you can pass it to the simulator as pyramses.cfg("cmd.txt")
+        """
+
+        if not isinstance(cmd, cfg):
+            raise TypeError('RAMSES: Function execSim because the command file is not of type pyramses.cfg()')
+        if pause is not None:
+            warnings.warn('RAMSES: Function execSim() does not support pauseSim() with the executable version of RAMSES.')
+        
+        if cmd.getCmdFilePath() is None:
+            cmd_writing_status=cmd.writeCmdFile('temp_cmd_uramses.txt')
+
+        cmdfile_path = cmd.getCmdFilePath()
+
+        if not cmd._out:
+            outfilename = os.path.join(os.getcwd(),'output '+datetime.datetime.now().strftime("%d.%m.%Y-%H.%M.%S")+'.trace')
+        else:
+            outfilename = cmd._out[0]
+        
+        # retval = self._ramseslib.ramses(cmdfilename.encode('utf-8'), outfilename.encode('utf-8'))
+        # if (retval != 0) and (retval != 112):
+        #     raise RAMSESError('RAMSES: Function execSim() failed with the flag %i. Last message was: %s' % (retval, self.getLastErr()))
+        
+        print("cmd file path \n",str(cmdfile_path))
+        result = subprocess.run(["URAMSES.exe", "-t",str(cmdfile_path)], capture_output=True, text=True)
+        print(result.stdout)
+        
+        return 0

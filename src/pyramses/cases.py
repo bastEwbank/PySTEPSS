@@ -30,6 +30,7 @@ class cfg(object):
         #self._cmdfile = tempfile.NamedTemporaryFile(prefix='pyramses_', suffix='.txt', dir=os.getcwd(),
         #                                            delete=False)  # text file to pass to Ramses
         #self._cmdfile.close()
+        self._cmdfile_path = None
 
         if cmd:
             try:
@@ -144,6 +145,8 @@ class cfg(object):
             text_file = open(userFile, "w")
             text_file.write(cmdFile)
             text_file.close()
+
+            self._cmdfile_path = userFile
             return 0
     
     def writeStepssCfgFile(self, userFile=None):
@@ -571,6 +574,31 @@ class cfg(object):
         
         """
         del self._dstset[:]
+
+
+    def getCmdFilePath(self):
+        """Get the path of the command file
+        
+        :returns: path of the command file
+        :rtype: str
+        
+        """
+        if self._cmdfile_path:
+            return self._cmdfile_path
+        else:
+            warnings.warn('RAMSES: Command file path is not set. Please write the command file first.')
+        
+    def delCmdFilePath(self):
+        """Delete the command file path from the object
+        
+        This will delete the command file path if it exists. 
+        If it does not exist, it will do nothing.
+        
+        """
+        if self._cmdfile_path :
+            self._cmdfile_path = None
+        else:
+            warnings.warn('RAMSES: Command file path is not set. Nothing to delete.')
 
     def getAllCfg(self):
         """Get all configuration parameters
