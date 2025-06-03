@@ -17,7 +17,7 @@ from warnings import warn
 
 from .cases import cfg
 from .globals import __runTimeObs__, __which
-from .simulator import sim
+from .simulator import sim, sim_exe 
 from .extractor import extractor, curplot, cur
 
 if sys.platform in ('win32', 'cygwin'):
