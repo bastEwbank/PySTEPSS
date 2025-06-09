@@ -274,6 +274,88 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
     #debug : print network transformers
     print(f"Created transformers in pandapower network:\n {net.trafo}")   
 
+def convertGenDatatoPP(net, gen_list_of_str:list, slack_name:str):
+    print(f"Generator list: {gen_list_of_str}")
+    print(f"Number of generators: {len(gen_list_of_str)}")
+    print(f"Type of gen_list_of_str: {type(gen_list_of_str)}")
+    
+    for gen_str in gen_list_of_str:
+        # Split the generator line into components, the separator is a space or mutiple spaces
+        gen_components = gen_str.split()
+        print(f"Generator components: {gen_components}")
+
+        if len(gen_components) == 9 or len(gen_components) == 10:
+            
+            if len(gen_components) == 9:
+                #GENER NAME BUS P Q VIMP SNOM QMIN QMAX BR ;
+                k = 0
+            elif len(gen_components) == 10:
+                #GENER NAME BUS (BUS) P Q VIMP SNOM QMIN QMAX BR ;
+                k = 1
+            gen_name = gen_components[0].strip()
+            bus_name = gen_components[1].strip()
+            p_mw = float(gen_components[2+k].strip())
+            q_mvar = float(gen_components[3+k].strip())
+            v_imp_pu = float(gen_components[4+k].strip())  # Impedance voltage in pu
+            sn_mva = float(gen_components[5+k].strip())
+            q_min_mvar = float(gen_components[6+k].strip())
+            q_max_mvar = float(gen_components[7+k].strip())
+            br_status = bool(int(gen_components[8+k].strip()))  # Convert to True/False
+            p_min_mw = float('nan')  # Not used in pandapower, set to NaN
+            p_max_mw = float('nan')  # Not used in pandapower, set to NaN
+        
+            
+        elif len(gen_components) == 11 or len(gen_components) == 12:
+            if len(gen_components) == 11 :
+                #GENER NAME BUS P Q V SNOM QMIN QMAX PMIN PMAX BR ;
+                k = 0
+            elif len(gen_components) == 12:
+                #GENER NAME BUS (BUS) P Q V SNOM QMIN QMAX PMIN PMAX BR ;
+                k = 1
+            gen_name = gen_components[0].strip()
+            bus_name = gen_components[1].strip()
+            p_mw = float(gen_components[2+k].strip())
+            q_mvar = float(gen_components[3+k].strip())
+            v_imp_pu = float(gen_components[4+k].strip())
+            sn_mva = float(gen_components[5+k].strip())
+            q_min_mvar = float(gen_components[6+k].strip())
+            q_max_mvar = float(gen_components[7+k].strip())
+            p_min_mw = float(gen_components[8+k].strip())
+            p_max_mw = float(gen_components[9+k].strip())
+            br_status = bool(int(gen_components[10+k].strip()))
+        else:
+            raise ValueError(f"Invalid generator definition: {gen_str}. Expected 5 components.")
+        
+        #Create the generator in pandapower
+        bus_id = net.bus[net.bus.name == bus_name].index[0]
+
+        print(f"Bus name: {bus_name}, Slack: {slack_name}")
+        if slack_name == bus_name:
+            # If the generator is a slack generator, we create a generator with the slack flag
+            pp.create_ext_grid(net, bus_id, vm_pu=v_imp_pu,
+                                name=gen_name, in_service=br_status,
+                                max_p_mw=p_max_mw, min_p_mw=p_min_mw,
+                                  max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar)
+            
+        else:
+            if v_imp_pu > 0:
+                pp.create_gen(net, bus_id, p_mw, vm_pu=v_imp_pu, sn_mva=sn_mva, name=gen_name,
+                            max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar,
+                            max_p_mw=p_max_mw, min_p_mw=p_min_mw, in_service=br_status)
+            else:
+                pp.create_sgen(net, bus_id, p_mw, q_mvar=q_mvar, sn_mva=sn_mva, name=gen_name,
+                                in_service=br_status, max_p_mw=p_max_mw, min_p_mw=p_min_mw,
+                                max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar)
+                
+    #debug : print network generators
+    print(f"Created generators in pandapower network:\n {net.gen}")
+    print(f"Created external grids in pandapower network:\n {net.ext_grid}")
+
+    if len(net.ext_grid) == 0:
+        raise RAMSESError("No external grid defined in the data files. Please define an external grid.")
+    
+    
+
 def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network'):
     """
     Converts a list of .dat files to a pandapower network.
@@ -378,7 +460,16 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     ltc_v_list = data_dict.get('LTC-V', [])
     convertTransfoDatatoPP(net, transfo_list,trfo_list, pshift_list, ltc_v_list)
     
-
+    #Create Generators
+    gen_list = data_dict.get('GENER', [])
+    slack_list = data_dict.get('SLACK', [])
+    if slack_list:
+        # If a slack bus is defined, we assume it is the first bus in the list
+        slack_bus_name = slack_list[0].strip()
+        print(f"Slack bus name: {slack_bus_name}")
+    else :
+        raise RAMSESError("No slack bus defined in the data files. Please define a slack bus.")
+    convertGenDatatoPP(net, gen_list,slack_bus_name)
     # #get availble std types for lines
     # std_types = pp.available_std_types(net, element='line') #return a table
     # print(f"Available standard types for lines:\n {std_types}")
