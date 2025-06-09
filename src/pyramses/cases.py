@@ -8,6 +8,8 @@ import warnings
 
 from pathlib import Path
 import time
+from pandapower import pandapowerNet
+from .ppconverter import convertDataToPandaPowerNetwork
 
 from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
@@ -31,6 +33,8 @@ class cfg(object):
         #                                            delete=False)  # text file to pass to Ramses
         #self._cmdfile.close()
         self._cmdfile_path = None
+
+        self._ppnet =None #PandaPower network object, if used
 
         if cmd:
             try:
@@ -600,6 +604,50 @@ class cfg(object):
         else:
             warnings.warn('RAMSES: Command file path is not set. Nothing to delete.')
 
+    def UpdatePandaPowerNetwork(self):
+        """Update the PandaPower network object
+        or generate a new one if it does not exist.
+        
+        :param ppnet: PandaPower network object
+        :type ppnet: pandapowerNet
+        
+        """
+
+        self._ppnet = convertDataToPandaPowerNetwork(self._dataset)
+    
+    def addPandaPowerNetwork(self, ppnet:pandapowerNet):
+        """Add an already existing PandaPower network object to 
+        the configuration.
+        
+        :param ppnet: PandaPower network object
+        :type ppnet: pandapowerNet
+        
+        """
+        self._ppnet = ppnet
+    
+    def getPandaPowerNetwork(self):
+        """Get the PandaPower network object
+        
+        :returns: PandaPower network object
+        :rtype: pandapowerNet
+        
+        """
+        if self._ppnet is None:
+            self.UpdatePandaPowerNetwork()
+        return self._ppnet
+    
+    def deletePandaPowerNetwork(self):
+        """Delete the PandaPower network object
+        
+        This will delete the PandaPower network object if it exists. 
+        If it does not exist, it will do nothing.
+        
+        """
+        if self._ppnet is not None:
+            self._ppnet = None
+        else:
+            warnings.warn('RAMSES: PandaPower network object is not set. Nothing to delete.')
+
     def getAllCfg(self):
         """Get all configuration parameters
         
@@ -618,3 +666,5 @@ class cfg(object):
             'obs': self._obs,
             'trj': self._trj
         }
+
+    
