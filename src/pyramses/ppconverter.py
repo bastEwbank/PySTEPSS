@@ -1,4 +1,7 @@
 import pandapower as pp
+import networkx as nx
+import itertools as it
+import matplotlib.pyplot as plt
 import os 
 from pathlib import Path
 import warnings
@@ -39,7 +42,8 @@ def convertBusDatatoPP(net, bus_list_of_str:list):
         #  not used in the same way as in PFC of Stepss.
 
         bus_id = pp.create_bus(net, vn_kv, name=bus_name,index=int(bus_name))
-        pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
+        if pload_mw != 0.0 or qload_tot_mvar != 0.0:
+            pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
                         name='load_'+bus_name)
     #debug : print network buses and loads
     print(f"Created buses in pandapower network:\n {net.bus}")
@@ -76,6 +80,12 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
         from_bus_id = net.bus[net.bus.name == from_bus_name].index[0]
         to_bus_id = net.bus[net.bus.name == to_bus_name].index[0]
         
+        # #check that there is not already a line between the two buses
+        # existing_lines = net.line[(net.line.from_bus == from_bus_id) & (net.line.to_bus == to_bus_id)]
+        # if not existing_lines.empty:
+        #     print(f"Line {line_name} already exists between {from_bus_name} and {to_bus_name}. Skipping creation.")
+        #     continue
+
         #Maximum current in kA
         bus_voltage_kv = net.bus.vn_kv[from_bus_id] # Assuming both buses have the same voltage level
         max_i_ka = sn_l_mva / (bus_voltage_kv)      # Convert MVA to kA using the formula I = S / V
@@ -92,7 +102,9 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
         c_nf_per_km = (( (2* wc2_uS * 1e-6)/ (f_nom * 2 * 3.14159) )/ length_km) /1e-9 # Convert wc2_uS to c_nf_per_km  
         pp.create_line_from_parameters(net, from_bus_id, to_bus_id, length_km,
                                         r_ohm_per_km, x_ohm_per_km, c_nf_per_km,
-                                            max_i_ka, name=line_name,  in_service=br_status)
+                                        max_i_ka, name=line_name,  in_service=br_status,
+                                        parallel=1
+                                    )
     #debug : print network lines
     print(f"Created lines in pandapower network:\n {net.line}")
 
@@ -114,7 +126,9 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
 
     vb_kv_hv = net.bus.vn_kv[hv_bus_id]  # High voltage bus voltage
     vb_kv_lv = net.bus.vn_kv[lv_bus_id]  # Low voltage bus voltage
-
+    print(f"High voltage bus {to_bus_name} voltage: {vb_kv_hv} kV")
+    print(f"Low voltage bus {from_bus_name} voltage: {vb_kv_lv} kV")
+    print((type(vb_kv_hv), type(vb_kv_lv)))
     voc_kv_lv= vb_kv_lv
     voc_kv_hv= n_per/100 * (voc_kv_lv/vb_kv_lv) * vb_kv_hv  # Voltage at the HV side in kV
     print(f"Voltage at HV side: {voc_kv_hv} kV")
@@ -161,7 +175,7 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
         print(f"Transformer components: {transfo_components}")
 
         if len(transfo_components) == 11:
-            #TRANSFO NAME FROMBUS TOBUS R X B1 B2 N SNOM SHIFT BR ;
+            #TRANSFO NAME FROMBUS TOBUS R X B1 B2 N PHI SNOM BR ;
             #Pi model transformer
             trafo_name = transfo_components[0].strip()
             from_bus_name = transfo_components[1].strip() 
@@ -171,8 +185,8 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
             b_from_per_base = float(transfo_components[5].strip())#Discarded in pandapower
             b_to_per_base = float(transfo_components[6].strip())
             n_per = float(transfo_components[7].strip())
-            sn_mva = float(transfo_components[8].strip())
-            shift_degree = float(transfo_components[9].strip())
+            shift_degree = float(transfo_components[8].strip())
+            sn_mva = float(transfo_components[9].strip())
             br_status = bool(int(transfo_components[10].strip()))  # Convert to True/False
            
         else:
@@ -477,3 +491,107 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     #Create Transformers       
 
     return net
+
+def PlotNetSimple(net):
+    # pp.plotting.simple_plot(net,show_plot=True,
+    #                         plot_loads=True, plot_sgens=True,
+    #                         plot_gens=True,)
+    
+    pp.plotting.plotly.simple_plotly(net)
+    #pp.plotting.plotly.vlevel_plotly(net)
+
+def PlotTopology(net, save_name=None):
+    """
+    Plots the topology of the pandapower network using NetworkX and Matplotlib.
+    Parameters
+    ----------
+    net : pandapowerNet
+        The pandapower network to plot.
+    save_name : str, optional
+        The name of the file to save the plot. If None, the plot will be shown.
+    """
+
+    multigraph=pp.topology.create_nxgraph(net)
+    # print(f"Multigraph: {multigraph.edges(keys=True, data=True)}")
+    # print(type(multigraph))
+    draw_labeled_multigraph(multigraph, 'weight', save_name=None)
+    
+#From https://networkx.org/documentation/stable/auto_examples/drawing/plot_multigraphs.html
+def draw_labeled_multigraph(G, attr_name, ax=None,save_name=None):
+    """
+    Length of connectionstyle must be at least that of a maximum number of edges
+    between pair of nodes. This number is maximum one-sided connections
+    for directed graph and maximum total connections for undirected graph.
+    """
+    # Works with arc3 and angle3 connectionstyles
+    connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
+    # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
+
+    plt.figure(figsize=(8, 6))
+
+
+    
+    #pos = nx.shell_layout(G)
+    #pos = nx.spring_layout(G, seed=42)  # Using spring layout for better spacing
+    #pos = nx.kamada_kawai_layout(G, scale=2.0)  # Using Kamada-Kawai layout for better spacing
+    
+    start_node = next(iter(G.nodes))  # Get an arbitrary starting node
+    pos= nx.bfs_layout(G, start_node)  # Using BFS layout starting from node 0
+    
+
+    nx.draw_networkx_nodes(G, pos, ax=ax)
+    nx.draw_networkx_labels(G, pos, font_size=20, ax=ax)
+    nx.draw_networkx_edges(
+        G, pos, edge_color="grey", connectionstyle=connectionstyle, ax=ax
+    )
+
+    labels = {
+        tuple(edge): f"{attrs[attr_name]} (Line 1, Transfo 0)"
+        for *edge, attrs in G.edges(keys=True, data=True)
+    }
+    nx.draw_networkx_edge_labels(
+        G,
+        pos,
+        labels,
+        connectionstyle=connectionstyle,
+        label_pos=0.3,
+        font_color="blue",
+        bbox={"alpha": 0},
+        ax=ax,
+    )
+    
+    if save_name is not None:
+        plt.savefig(save_name)
+    else:
+        plt.show()
+    
+    plt.close()  # Close the plot to free memory
+
+
+def runPowerFlowPP(net):
+    """
+    Run power flow on the given pandapower network.
+
+    Parameters:
+    net (pandapowerNet): The pandapower network to run the power flow on.
+
+    Returns:
+    pandapowerNet: The updated pandapower network after running the power flow.
+    """
+    #print for debug 
+    # print(f"DEBUG")
+    # print(net.bus)
+    # print(net.line)
+    # print(net.trafo)
+    # print(net.gen)
+    # print(net.ext_grid)
+    # print(net.load)
+
+    #pp.runpp(net, max_iteration=100)
+    
+    # print("Power flow results:")
+    # print("Bus voltages:")
+    # print(net.res_bus.vm_pu)
+    # print("Line loading:")
+    # print(net.res_line.loading_percent)
+    return
