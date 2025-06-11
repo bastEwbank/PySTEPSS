@@ -19,17 +19,23 @@ with this command line:
    python -m venv venv
    ``` 
 2. Activate the virtual environment:
+
    - On Windows:
+
      ```
      venv\Scripts\activate
      ```
+
    - On Linux or MacOS:
+   
      ```
      source venv/bin/activate
      ```
+
 3. Install the local package with this command line 
 (replace `/full/path/to/my_package` with the actual path to your package which 
 is the directory containing the `setup.py` file):
+
    ```
    pip install -e /full/path/to/my_package
    ```

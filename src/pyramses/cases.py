@@ -9,7 +9,8 @@ import warnings
 from pathlib import Path
 import time
 from pandapower import pandapowerNet
-from .ppconverter import convertDataToPandaPowerNetwork
+from .ppconverter import convertDataToPandaPowerNetwork, PlotNetSimple, PlotTopology,runPowerFlowPP
+ 
 
 from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
@@ -34,7 +35,7 @@ class cfg(object):
         #self._cmdfile.close()
         self._cmdfile_path = None
 
-        self._ppnet =None #PandaPower network object, if used
+        self.ppnet =None #PandaPower network object, if used
 
         if cmd:
             try:
@@ -613,7 +614,7 @@ class cfg(object):
         
         """
 
-        self._ppnet = convertDataToPandaPowerNetwork(self._dataset)
+        self.ppnet = convertDataToPandaPowerNetwork(self._dataset)
     
     def addPandaPowerNetwork(self, ppnet:pandapowerNet):
         """Add an already existing PandaPower network object to 
@@ -623,7 +624,7 @@ class cfg(object):
         :type ppnet: pandapowerNet
         
         """
-        self._ppnet = ppnet
+        self.ppnet = ppnet
     
     def getPandaPowerNetwork(self):
         """Get the PandaPower network object
@@ -632,9 +633,9 @@ class cfg(object):
         :rtype: pandapowerNet
         
         """
-        if self._ppnet is None:
+        if self.ppnet is None:
             self.UpdatePandaPowerNetwork()
-        return self._ppnet
+        return self.ppnet
     
     def deletePandaPowerNetwork(self):
         """Delete the PandaPower network object
@@ -643,10 +644,50 @@ class cfg(object):
         If it does not exist, it will do nothing.
         
         """
-        if self._ppnet is not None:
-            self._ppnet = None
+        if self.ppnet is not None:
+            self.ppnet = None
         else:
             warnings.warn('RAMSES: PandaPower network object is not set. Nothing to delete.')
+
+    def runPFC(self):
+
+        if self.ppnet is None:
+            self.UpdatePandaPowerNetwork()
+        
+        runPowerFlowPP(self.ppnet)
+        return self.ppnet
+    
+    def plotPandaPowerNetwork(self):
+        """Plot the PandaPower network
+        
+        :param ax: Matplotlib axis to plot on (Optional)
+        :type ax: matplotlib.axes.Axes
+        
+        :returns: Matplotlib figure and axis
+        :rtype: tuple
+        
+        """
+        if self.ppnet is None:
+            self.UpdatePandaPowerNetwork()
+        
+        PlotNetSimple(self.ppnet)
+    
+    def plotTopology(self,):
+        """Plot the topology of the PandaPower network
+        
+        :param ax: Matplotlib axis to plot on (Optional)
+        :type ax: matplotlib.axes.Axes
+        
+        :returns: Matplotlib figure and axis
+        :rtype: tuple
+        
+        """
+        if self.ppnet is None:
+            self.UpdatePandaPowerNetwork()
+
+        PlotTopology(self.ppnet)
+      
+        
 
     def getAllCfg(self):
         """Get all configuration parameters
