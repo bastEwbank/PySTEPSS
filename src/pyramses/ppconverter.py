@@ -1,4 +1,5 @@
 import pandapower as pp
+from numpy import pi 
 import networkx as nx
 import itertools as it
 import matplotlib.pyplot as plt
@@ -11,13 +12,13 @@ from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 warnings.showwarning = CustomWarning
 
 def convertBusDatatoPP(net, bus_list_of_str:list):
-    print(f"Bus list: {bus_list_of_str}")
-    print(f"Number of buses: {len(bus_list_of_str)}")
-    print(f"Type of bus_list_of_str: {type(bus_list_of_str)}")
+    # print(f"Bus list: {bus_list_of_str}")
+    # print(f"Number of buses: {len(bus_list_of_str)}")
+    # print(f"Type of bus_list_of_str: {type(bus_list_of_str)}")
     for bus_str in bus_list_of_str:
         # Split the bus line into components, the separator is a space or mutiple spaces
         bus_components = bus_str.split()
-        print(f"Bus components: {bus_components}")
+        # print(f"Bus components: {bus_components}")
 
         if len(bus_components) == 2:
             bus_name = bus_components[0].strip()
@@ -46,13 +47,13 @@ def convertBusDatatoPP(net, bus_list_of_str:list):
             pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
                         name='load_'+bus_name)
     #debug : print network buses and loads
-    print(f"Created buses in pandapower network:\n {net.bus}")
-    print(f"Created loads in pandapower network:\n {net.load}")
+    # print(f"Created buses in pandapower network:\n {net.bus}")
+    # print(f"Created loads in pandapower network:\n {net.load}")
 
 def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
-    print(f"Line list: {line_list_of_str}")
-    print(f"Number of lines: {len(line_list_of_str)}")
-    print(f"Type of line_list_of_str: {type(line_list_of_str)}")
+    # print(f"Line list: {line_list_of_str}")
+    # print(f"Number of lines: {len(line_list_of_str)}")
+    # print(f"Type of line_list_of_str: {type(line_list_of_str)}")
     
     #get network nominal frequency :
     f_nom = net.f_hz if hasattr(net, 'f_hz') else 50.0  # Default to 50.0 Hz if not set
@@ -61,7 +62,7 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
     for line_str in line_list_of_str:
         # Split the line line into components, the separator is a space or mutiple spaces
         line_components = line_str.split()
-        print(f"Line components: {line_components}")
+        #print(f"Line components: {line_components}")
 
         if len(line_components) == 8:
             line_name = line_components[0].strip()
@@ -90,23 +91,24 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
         bus_voltage_kv = net.bus.vn_kv[from_bus_id] # Assuming both buses have the same voltage level
         max_i_ka = sn_l_mva / (bus_voltage_kv)      # Convert MVA to kA using the formula I = S / V
 
+        print("length_list",length_km_list)
         if length_km_list is not None:
             length_km = length_km_list[l] if l < len(length_km_list) else 1.0  # Default to 1.0 km if not provided
-            l+=1
+            l=l+1
         else:
             length_km = 1.0 # Default to 1.0 km if not provided
 
     
         r_ohm_per_km = r_ohm / length_km
         x_ohm_per_km = x_ohm / length_km
-        c_nf_per_km = (( (2* wc2_uS * 1e-6)/ (f_nom * 2 * 3.14159) )/ length_km) /1e-9 # Convert wc2_uS to c_nf_per_km  
+        c_nf_per_km = (( (2* wc2_uS * 1e-6)/ (f_nom * 2 * pi) )/ length_km) /1e-9 # Convert wc2_uS to c_nf_per_km  
         pp.create_line_from_parameters(net, from_bus_id, to_bus_id, length_km,
                                         r_ohm_per_km, x_ohm_per_km, c_nf_per_km,
                                         max_i_ka, name=line_name,  in_service=br_status,
                                         parallel=1
                                     )
     #debug : print network lines
-    print(f"Created lines in pandapower network:\n {net.line}")
+    #print(f"Created lines in pandapower network:\n {net.line}")
 
 def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
                x_from_per_base:float, b_to_per_base:float, n_per:float,
@@ -139,13 +141,15 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     r_pu = r_from_per_base /100 *(vb_kv_lv/voc_kv_lv)**2
     x_pu = x_from_per_base /100 *(vb_kv_lv/voc_kv_lv)**2 #From Stepss documentation, R and X are the resistances and reactances at the low voltage side, in pu
     
-    p_mw_cu = r_pu *sn_mva
-    vkr_percent = (p_mw_cu / sn_mva) * 100  # Convert to percentage
+    #p_mw_cu = r_pu *sn_mva
+    #vkr_percent = (p_mw_cu / sn_mva) * 100  # Convert to percentage
+    vkr_percent = r_pu *100  # Convert to percentage, as per Stepss documentation
 
     z_pu = complex(r_pu, x_pu)  # Impedance in pu
     z_mag_pu = abs(z_pu)  # Magnitude of the impedance in pu
 
-    vk_percent = z_mag_pu * 100  * (sn_mva / sn_mva_net)  # Convert to percentage
+    #vk_percent = z_mag_pu * 100  * (sn_mva) #/ sn_mva_net)  # Convert to percentage
+    vk_percent = x_pu *100 # Convert to percentage, as per Stepss documentation
 
     b_pu = b_to_per_base / 100 * (vb_kv_lv/voc_kv_lv)**2  #From Stepss documentation, B is the shunt admittance at the low voltage side
     y_pu = complex(0, b_pu)  # Admittance in pu
@@ -154,7 +158,15 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
 
     pfe_kw = 0.0  # Power loss in kW, Conductance neglected in STEPSS, set to 0
 
-    
+    # print(net, hv_bus_id, lv_bus_id,
+    #                       sn_mva,'\n', voc_kv_hv, voc_kv_lv,'\n',
+    #                       vkr_percent, vk_percent,'\n', pfe_kw,
+    #                       i0_percent,'\n', shift_degree,'\n',
+    #                       tap_side, tap_neutral,
+    #                       tap_max, tap_min,
+    #                       tap_step_percent,'\n',
+    #                       transfo_name,in_service,
+    #                                         )
 
     pp.create_transformer_from_parameters(net, hv_bus_id, lv_bus_id,
                                             sn_mva, voc_kv_hv, voc_kv_lv,
@@ -263,21 +275,30 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
                 raise ValueError(f"Transformer {ltc_name} not found in pandapower network.")
             voc_kv_hv = transfo_row['vn_hv_kv'].values[0]  # High voltage side voltage
             voc_kv_lv = transfo_row['vn_lv_kv'].values[0]  # Low voltage side voltage
-            n_per = (voc_kv_hv / voc_kv_lv) * 100  # Transformer ratio in percentage 
+            
+            #Create the transformer in pandapower
+            lv_bus_id = net.bus[net.bus.name == from_bus_name].index[0]
+            hv_bus_id = net.bus[net.bus.name == to_bus_name].index[0]
+
+            vb_kv_hv = net.bus.vn_kv[hv_bus_id]  # High voltage bus voltage
+            vb_kv_lv = net.bus.vn_kv[lv_bus_id]  # Low voltage bus voltage
+
+            n_per = ((voc_kv_hv/vb_kv_hv) / (voc_kv_lv/vb_kv_lv)) * 100  # Transformer ratio in percentage 
             print(n_per)
             print(type(n_per))
             #Compute Tap position of the ltc
-            p_neutral=int((n_per - n_first_per)*(nb_pos-1)/(n_last_per-n_first_per)+1) 
-            print (f"Tap position: {p_neutral} for transformer {trafo_name}")    
+            
+                
             tap_side = 'lv'
 
             tap_min = 1
             tap_step_percent = (n_last_per - n_first_per) / (nb_pos-1)  # Tap step in percentage
-            tap_max = int(tap_min + ((nb_pos-1) * tap_step_percent))  # Maximum tap position
-
+            tap_neutral = int(tap_min + (n_per-n_first_per)/(tap_step_percent) )  # Maximum tap position
+            tap_max = int(tap_min + (nb_pos - 1)*tap_step_percent)  # Maximum tap position
+            print (f"Tap position: {tap_neutral} for transformer {trafo_name}")
             #Update the transformer parameters in pandapower
             net.trafo.loc[net.trafo.name == ltc_name, 'tap_side'] = tap_side
-            net.trafo.loc[net.trafo.name == ltc_name, 'tap_neutral'] = p_neutral
+            net.trafo.loc[net.trafo.name == ltc_name, 'tap_neutral'] = tap_neutral
             net.trafo.loc[net.trafo.name == ltc_name, 'tap_max'] = tap_max
             net.trafo.loc[net.trafo.name == ltc_name, 'tap_min'] = tap_min
             net.trafo.loc[net.trafo.name == ltc_name, 'tap_step_percent'] = tap_step_percent
@@ -286,17 +307,17 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
             raise ValueError(f"Invalid load tap changer definition: {ltc_v_str}. Expected 7 components.")
         
     #debug : print network transformers
-    print(f"Created transformers in pandapower network:\n {net.trafo}")   
+    #print(f"Created transformers in pandapower network:\n {net.trafo}")   
 
 def convertGenDatatoPP(net, gen_list_of_str:list, slack_name:str):
-    print(f"Generator list: {gen_list_of_str}")
-    print(f"Number of generators: {len(gen_list_of_str)}")
-    print(f"Type of gen_list_of_str: {type(gen_list_of_str)}")
+    #print(f"Generator list: {gen_list_of_str}")
+    #print(f"Number of generators: {len(gen_list_of_str)}")
+    #print(f"Type of gen_list_of_str: {type(gen_list_of_str)}")
     
     for gen_str in gen_list_of_str:
         # Split the generator line into components, the separator is a space or mutiple spaces
         gen_components = gen_str.split()
-        print(f"Generator components: {gen_components}")
+        #print(f"Generator components: {gen_components}")
 
         if len(gen_components) == 9 or len(gen_components) == 10:
             
@@ -343,7 +364,7 @@ def convertGenDatatoPP(net, gen_list_of_str:list, slack_name:str):
         #Create the generator in pandapower
         bus_id = net.bus[net.bus.name == bus_name].index[0]
 
-        print(f"Bus name: {bus_name}, Slack: {slack_name}")
+        #print(f"Bus name: {bus_name}, Slack: {slack_name}")
         if slack_name == bus_name:
             # If the generator is a slack generator, we create a generator with the slack flag
             pp.create_ext_grid(net, bus_id, vm_pu=v_imp_pu,
@@ -362,8 +383,8 @@ def convertGenDatatoPP(net, gen_list_of_str:list, slack_name:str):
                                 max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar)
                 
     #debug : print network generators
-    print(f"Created generators in pandapower network:\n {net.gen}")
-    print(f"Created external grids in pandapower network:\n {net.ext_grid}")
+    #print(f"Created generators in pandapower network:\n {net.gen}")
+    #print(f"Created external grids in pandapower network:\n {net.ext_grid}")
 
     if len(net.ext_grid) == 0:
         raise RAMSESError("No external grid defined in the data files. Please define an external grid.")
@@ -401,7 +422,7 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
         #Read the file
         with open(datfile, 'r') as file:
             data_str += file.read() #string with all the text from the file
-    print (f"Data from {datfile}:\n{data_str}\n")
+    #print (f"Data from {datfile}:\n{data_str}\n")
     #print(f"Type of reading{type(data_str)}\n")
     
     #Remove lines of comments that start with # and solvers options that start with $
@@ -409,15 +430,47 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     data_lines = [line for line in data_lines if not line.startswith('#')]
     data_lines = [line for line in data_lines if not line.startswith('$')]
 
+    #Tricks to specify length of cables in STEPSS data files as a specific comments
+    #and to get it back here for the conversion to pandapower.
+    
+    cable_length = []
+    for line in data_lines:
+        if not line.endswith(';'):
+            
+            temp_line=line.strip()
+            #print the raw line for debug
+            #print(f"Raw line: {repr(temp_line)}")
+            temp_list=temp_line.strip().split(';')
+            #print(f"Temp list: {temp_list}")
+            # print(temp_list)
+            # print((type(temp_list), len(temp_list)))
+            if len(temp_list) > 1 and temp_list[-1].strip()!= '':
+
+                if temp_line and temp_line.startswith('LINE'):  # If the line is not empty after stripping
+                    cable_length.append(float(temp_list[-1]))  # Get the last element of the line, which is the length in km
+                
+                
+                #remove this string part which is after the semicolon
+                new_line = temp_list[0]+';'  # Keep only the part before the semicolon
+
+                #print(f"Line after removing semicolon part: {new_line}")
+                #inject this new line back to the data_lines
+                data_lines[data_lines.index(line)] = new_line
+    #after_sc_lines = [line for line in data_lines if not line.endswith(';')]
+    #print(f"Lines after removing comments and solver options:\n{cable_length}\n")
+
+    
+
     #Join the lines back into a single string
     data_str = "\n".join(data_lines)
-
+    
     #Split the string into sentences that end with a semicolon but that can
     #span multiple lines.
+    #data_str = data_str.replace(';', ';\n')
     data_str = data_str.replace('\n', '')  # remove newlines
     data_str = data_str.replace(';', ';\n')  # Replace semicolon with semicolon and newline
 
-    print(f"Data after removing comments and solver options:\n{data_str}\n")
+    #print(f"Data after removing comments and solver options:\n{data_str}\n")
 
     #Split the string into lines to get each sentence
     data_lines=data_str.splitlines() 
@@ -444,9 +497,9 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
                 data_dict[keyword].append(line)
                 break  # Stop checking after the first match
 
-    print("Data dictionary with separated keywords:")
-    for keyword, lines in data_dict.items():
-        print(f"{keyword}: {lines}")            
+    #print("Data dictionary with separated keywords:")
+    #for keyword, lines in data_dict.items():
+        #print(f"{keyword}: {lines}")            
 
     #pu base of pp :
     sn_pp_mva = 100.0  # Default base power in MVA for pandapower
@@ -465,7 +518,8 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     
     #Create lines
     line_list = data_dict.get('LINE', []) 
-    convertLineDatatoPP(net, line_list)
+    
+    convertLineDatatoPP(net, line_list, length_km_list=cable_length)
 
     #Create transformers
     transfo_list = data_dict.get('TRANSFO', [])
@@ -480,7 +534,7 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     if slack_list:
         # If a slack bus is defined, we assume it is the first bus in the list
         slack_bus_name = slack_list[0].strip()
-        print(f"Slack bus name: {slack_bus_name}")
+        #print(f"Slack bus name: {slack_bus_name}")
     else :
         raise RAMSESError("No slack bus defined in the data files. Please define a slack bus.")
     convertGenDatatoPP(net, gen_list,slack_bus_name)
