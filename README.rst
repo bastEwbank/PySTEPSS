@@ -15,8 +15,8 @@ Venv installation guidelines while this project is in development:
 
 1. Create a virtual environment in your project working directory
 with this command line:
-
-   ``python -m venv venv``
+.. code-block::
+   python -m venv venv
 
 2. Activate the virtual environment:
 
