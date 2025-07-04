@@ -8,6 +8,7 @@ import warnings
 
 from pathlib import Path
 import time
+from numpy import pi as pi   
 from pandapower import pandapowerNet
 from .ppconverter import convertDataToPandaPowerNetwork, PlotNetSimple, PlotTopology,runPowerFlowPP
  
@@ -178,12 +179,12 @@ class cfg(object):
             for file in self._dataset:
                 if i > 10 :
                     break
-                cfgFile+= f"fileData{i}={str(Path(file).resolve()).replace('\\', '\\\\')}\n"
+                cfgFile+= f'fileData{i}=' + str(Path(file).resolve()).replace('\\', '\\\\') + '\n'
                 i += 1
 
             if i <= 10:
                 for j in range(i, 11):
-                    cfgFile += f'fileData{j}=\n'   
+                    cfgFile += f'fileData{j}='+'\n'   
             
             #Disturbance file
             if self._dstset:
@@ -649,12 +650,28 @@ class cfg(object):
         else:
             warnings.warn('RAMSES: PandaPower network object is not set. Nothing to delete.')
 
-    def runPFC(self):
+    def runPFC(self, add_results=False, tmpFile_path_str='lf_res_temp.dat'):
 
         if self.ppnet is None:
             self.UpdatePandaPowerNetwork()
         
         runPowerFlowPP(self.ppnet)
+
+        
+        if add_results:
+            tmp_res_file =""
+            for idx, row in self.ppnet.res_bus.iterrows():
+                tmp_res_file +=f"LFRESV {idx} {row['vm_pu']} {float(row['va_degree'])*pi/180} ;\n"
+            
+            
+            if os.path.isfile(tmpFile_path_str):
+                warnings.warn('The file %s already exists. It will be overwritten!' % (tmpFile_path_str))
+            text_file = open(tmpFile_path_str, "w")
+            text_file.write(tmp_res_file)
+            text_file.close()
+
+            self.addData(tmpFile_path_str)
+
         return self.ppnet
     
     def plotPandaPowerNetwork(self):

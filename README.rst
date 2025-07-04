@@ -9,12 +9,16 @@ Here is the diffents tools included in the STEPSS suite:
 - RAMSES: a dynamic simulator for power systems
 - CODEGEN: a generator of fortran code thats describe models for the RAMSES simulator
 
+v1.0.0
+This version works with the v1.0.1 of ELEC0449 Repository.
+
 How to install
 --------------
 Venv installation guidelines while this project is in development:
 
 1. Create a virtual environment in your project working directory
 with this command line:
+
 .. code-block::
    python -m venv venv
 
@@ -22,17 +26,20 @@ with this command line:
 
    - On Windows:
 
-     ``venv\Scripts\activate``
+.. code-block::
+    venv\Scripts\activate
 
    - On Linux or MacOS:
-   
-     ``source venv/bin/activate``
+
+.. code-block::   
+     source venv/bin/activate
 
 3. Install the local package with this command line 
 (replace `/full/path/to/my_package` with the actual path to your package which 
 is the directory containing the `setup.py` file):
 
-   ``pip install -e /full/path/to/my_package``
+.. code-block::
+   pip install -e /full/path/to/my_package --no-build-isolation
 
 -e option means "editable" mode, which allows you to modify the code your package
 and see the changes immediately without reinstalling the package.
