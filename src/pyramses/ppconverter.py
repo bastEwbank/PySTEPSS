@@ -11,10 +11,11 @@ from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
 warnings.showwarning = CustomWarning
 
-def convertBusDatatoPP(net, bus_list_of_str:list):
+def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
     # print(f"Bus list: {bus_list_of_str}")
     # print(f"Number of buses: {len(bus_list_of_str)}")
     # print(f"Type of bus_list_of_str: {type(bus_list_of_str)}")
+    #print(f"Geodata dictionary: {geodata_dict}")
     for bus_str in bus_list_of_str:
         # Split the bus line into components, the separator is a space or mutiple spaces
         bus_components = bus_str.split()
@@ -42,7 +43,19 @@ def convertBusDatatoPP(net, bus_list_of_str:list):
         # "const_z_percent" and "const_i_percent" in pandapower, but it is not
         #  not used in the same way as in PFC of Stepss.
 
-        bus_id = pp.create_bus(net, vn_kv, name=bus_name,index=int(bus_name))
+        try: 
+            bus_index=int(bus_name)  # Try to convert bus_name to an integer
+        except ValueError:
+            bus_index = None  # If it fails, set bus_index to None
+
+
+        try:
+            geo_lonlat = geodata_dict[bus_name]  # Get the geodata for the bus
+        except KeyError:
+            geo_lonlat = None  # If the bus name is not in the geodata dictionary, set it to None
+        print(geo_lonlat)
+        bus_id = pp.create_bus(net, vn_kv, name=bus_name,index=bus_index,
+                               geodata = geo_lonlat)
         if pload_mw != 0.0 or qload_tot_mvar != 0.0:
             pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
                         name='load_'+bus_name)
@@ -50,7 +63,7 @@ def convertBusDatatoPP(net, bus_list_of_str:list):
     # print(f"Created buses in pandapower network:\n {net.bus}")
     # print(f"Created loads in pandapower network:\n {net.load}")
 
-def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
+def convertLineDatatoPP(net, line_list_of_str:list, length_km_dict:dict={}):
     # print(f"Line list: {line_list_of_str}")
     # print(f"Number of lines: {len(line_list_of_str)}")
     # print(f"Type of line_list_of_str: {type(line_list_of_str)}")
@@ -58,7 +71,7 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
     #get network nominal frequency :
     f_nom = net.f_hz if hasattr(net, 'f_hz') else 50.0  # Default to 50.0 Hz if not set
 
-    l=0
+    
     for line_str in line_list_of_str:
         # Split the line line into components, the separator is a space or mutiple spaces
         line_components = line_str.split()
@@ -92,12 +105,16 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_list=None):
         max_i_ka = sn_l_mva / (bus_voltage_kv)      # Convert MVA to kA using the formula I = S / V
 
         #print("length_list",length_km_list)
-        if length_km_list is not None:
-            length_km = length_km_list[l] if l < len(length_km_list) else 1.0  # Default to 1.0 km if not provided
-            l=l+1
-        else:
-            length_km = 1.0 # Default to 1.0 km if not provided
+        # if length_km_list is not None:
+        #     length_km = length_km_list[l] if l < len(length_km_list) else 1.0  # Default to 1.0 km if not provided
+        #     l=l+1
+        # else:
+        #     length_km = 1.0 # Default to 1.0 km if not provided
 
+        try:
+            length_km = length_km_dict[line_name]  # Get the length in km from the dictionary
+        except KeyError:
+            length_km = 1.0
     
         r_ohm_per_km = r_ohm / length_km
         x_ohm_per_km = x_ohm / length_km
@@ -486,23 +503,49 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     #Tricks to specify length of cables in STEPSS data files as a specific comments
     #and to get it back here for the conversion to pandapower.
     
-    cable_length = []
+    cable_length = dict()
+    geodata_lonlat = dict()
     for line in data_lines:
         if not line.endswith(';'):
             
             temp_line=line.strip()
             #print the raw line for debug
             #print(f"Raw line: {repr(temp_line)}")
-            temp_list=temp_line.strip().split(';')
+            temp_list=temp_line.split(';')
             #print(f"Temp list: {temp_list}")
             # print(temp_list)
             # print((type(temp_list), len(temp_list)))
             if len(temp_list) > 1 and temp_list[-1].strip()!= '':
 
                 if temp_line and temp_line.startswith('LINE'):  # If the line is not empty after stripping
-                    cable_length.append(float(temp_list[-1]))  # Get the last element of the line, which is the length in km
-                
-                
+                    line_param = temp_list[0].split() # 
+                    line_n = line_param[1].strip()  # Get the second element of the line, which is the line name
+                    #cable_length.append(float(temp_list[-1]))  # Get the last element of the line, which is the length in km
+
+                    cable_length[line_n] = float(temp_list[-1].strip())  # Get the last element of the line, which is the length in km and add it to the dictionary
+
+                elif temp_line and temp_line.startswith('BUS'):
+                    bus_param = temp_list[0].split() #
+                    #print(f"Bus parameters: {bus_param}")
+                    bus_n = bus_param[1].strip()  # Get the second element of the line, which is the bus name    
+
+                    geodata = temp_list[-1].strip()
+                    geodata =geodata.split(' ')
+
+                    #remove element of list equal to ''
+                    geodata = [x for x in geodata if x != '']
+                    if len(geodata) ==2:
+                        try :
+                            geodata = [float(x) for x in geodata]  # Convert to float
+                            
+                            #geodata_lonlat.append((geodata[1],geodata[0]))  # Get the last element of the line, which is the latitude/longitude info
+                            geodata_lonlat[bus_n] = (geodata[1],geodata[0])  # Get the last element of the line, which is the latitude/longitude info and add it to the dictionary
+                        except ValueError:
+                            warnings.warn(f"Invalid geodata format in line: {line}.\n Expected two numeric values (longitude and latitude). Skipping this line.")
+                               
+
+                    else: 
+                        warnings.warn(f"Invalid geodata format in line: {line}.\n Expected 2 elements (longitude and latitude). Skipping this line.")
                 #remove this string part which is after the semicolon
                 new_line = temp_list[0]+';'  # Keep only the part before the semicolon
 
@@ -567,12 +610,12 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
 
     # Create buses
     bus_list = data_dict.get('BUS', [])
-    convertBusDatatoPP(net, bus_list)
+    convertBusDatatoPP(net, bus_list, geodata_dict=geodata_lonlat)
     
     #Create lines
     line_list = data_dict.get('LINE', []) 
     
-    convertLineDatatoPP(net, line_list, length_km_list=cable_length)
+    convertLineDatatoPP(net, line_list, length_km_dict=cable_length)
 
     #Create transformers
     transfo_list = data_dict.get('TRANSFO', [])

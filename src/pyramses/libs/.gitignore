@@ -1,5 +1,3 @@
 /ramses.exp
 /ramses.lib
-/ramses.dll
-/ramses.so
 *.h.bak
