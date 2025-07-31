@@ -9,8 +9,8 @@ Here is the diffents tools included in the STEPSS suite:
 - RAMSES: a dynamic simulator for power systems
 - CODEGEN: a generator of fortran code thats describe models for the RAMSES simulator
 
-v1.0.0
-This version works with the v1.0.1 of ELEC0449 Repository.
+v1.0.1
+This version works with the v1.0.2 of ELEC0449 Repository.
 
 How to install
 --------------
