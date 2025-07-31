@@ -325,7 +325,7 @@ class extractor(object):
             return self._getBraClass(self._time, self._results, 2*self._busnum+
                                  self._shunum+2*self._ldnum+6*(i-1), braname)
         except ValueError:
-            warnings.warn('Branch %s not found' % (ldnabranameme))
+            warnings.warn('Branch %s not found' % (braname))
             
     class _getBraClass(object):
         def _getElem(self, j, msg):

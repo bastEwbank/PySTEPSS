@@ -859,7 +859,7 @@ class sim(object):
         """
         return self._ramseslib.add_disturb(t_dist, disturb.encode('utf-8'))
 
-    def load_MDL(MDLName):
+    def load_MDL(self,MDLName):
         """Load external DLL file with user defined models. Should be in current directory or absolute path.
 
         :param MDLName: path to file
@@ -875,7 +875,7 @@ class sim(object):
         """
         return self._ramseslib.c_load_MDL(MDLName.encode('utf-8'))
 
-    def unload_MDL(MDLName):
+    def unload_MDL(self,MDLName):
         """Unload external DLL file with user defined models. Should be in current directory or absolute path.
 
         :param MDLName: path to file
@@ -893,7 +893,7 @@ class sim(object):
         return self._ramseslib.c_unload_MDL(MDLName.encode('utf-8'))
 
 
-    def get_MDL_no():
+    def get_MDL_no(self):
         """Unload external DLL file with user defined models. Should be in current directory or absolute path.
 
         :returns: list of observable values
