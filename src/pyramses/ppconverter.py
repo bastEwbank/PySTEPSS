@@ -59,6 +59,14 @@ def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
         if pload_mw != 0.0 or qload_tot_mvar != 0.0:
             pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
                         name='load_'+bus_name)
+            
+        if bshunt_mvar != 0.0 :
+            # Create a shunt element if there is a shunt admittance
+            pp.create.create_shunt(net, bus_id, -bshunt_mvar, p_mw=0.0) 
+            #Minus sign for bshunt because pandapower assume shunt as load
+            # so a positive bshunt_mvar is a reactor, and a negative bshunt_mvar
+            # is a capacitor. While in Stepss, a positive bshunt_mvar is a capacitor.
+            
     #debug : print network buses and loads
     # print(f"Created buses in pandapower network:\n {net.bus}")
     # print(f"Created loads in pandapower network:\n {net.load}")
