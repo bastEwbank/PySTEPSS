@@ -9,7 +9,7 @@ import warnings
 from pathlib import Path
 import time
 from numpy import pi as pi   
-from pandapower import pandapowerNet
+#from pandapower import pandapowerNet
 from .ppconverter import convertDataToPandaPowerNetwork, PlotNetSimple, PlotTopology,runPowerFlowPP
  
 
@@ -617,7 +617,7 @@ class cfg(object):
 
         self.ppnet = convertDataToPandaPowerNetwork(self._dataset)
     
-    def addPandaPowerNetwork(self, ppnet:pandapowerNet):
+    def addPandaPowerNetwork(self, ppnet):
         """Add an already existing PandaPower network object to 
         the configuration.
         
@@ -674,6 +674,28 @@ class cfg(object):
 
         return self.ppnet
     
+    def getFreq(self):
+        """Get the frequency of the PandaPower network
+        :returns: frequency in Hz
+        :rtype: float
+        
+        """
+        if self.ppnet is None:
+            self.UpdatePandaPowerNetwork()
+        
+        return self.ppnet.f_hz
+
+    def getBaseMVA(self):
+        """Get the base power of the PandaPower network
+        :returns: base power in MVA
+        :rtype: float
+        
+        """
+        if self.ppnet is None:
+            self.UpdatePandaPowerNetwork()
+        
+        return self.ppnet.sn_mva
+
     def plotPandaPowerNetwork(self):
         """Plot the PandaPower network
         

@@ -54,10 +54,10 @@ def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
         except KeyError:
             geo_lonlat = None  # If the bus name is not in the geodata dictionary, set it to None
         print(geo_lonlat)
-        bus_id = pp.create_bus(net, vn_kv, name=bus_name,index=bus_index,
+        bus_id = pp.create.create_bus(net, vn_kv, name=bus_name,index=bus_index,
                                geodata = geo_lonlat)
         if pload_mw != 0.0 or qload_tot_mvar != 0.0:
-            pp.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
+            pp.create.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
                         name='load_'+bus_name)
             
         if bshunt_mvar != 0.0 :
@@ -66,7 +66,7 @@ def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
             #Minus sign for bshunt because pandapower assume shunt as load
             # so a positive bshunt_mvar is a reactor, and a negative bshunt_mvar
             # is a capacitor. While in Stepss, a positive bshunt_mvar is a capacitor.
-            
+
     #debug : print network buses and loads
     # print(f"Created buses in pandapower network:\n {net.bus}")
     # print(f"Created loads in pandapower network:\n {net.load}")
@@ -127,7 +127,7 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_dict:dict={}):
         r_ohm_per_km = r_ohm / length_km
         x_ohm_per_km = x_ohm / length_km
         c_nf_per_km = (( (2* wc2_uS * 1e-6)/ (f_nom * 2 * pi) )/ length_km) /1e-9 # Convert wc2_uS to c_nf_per_km  
-        pp.create_line_from_parameters(net, from_bus_id, to_bus_id, length_km,
+        pp.create.create_line_from_parameters(net, from_bus_id, to_bus_id, length_km,
                                         r_ohm_per_km, x_ohm_per_km, c_nf_per_km,
                                         max_i_ka, name=line_name,  in_service=br_status,
                                         parallel=1
@@ -194,7 +194,7 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     pfe_kw = 0.0  # Power loss in kW, Conductance neglected in STEPSS, set to 0
 
 
-    return pp.create_transformer_from_parameters(net, hv_bus_id, lv_bus_id,
+    return pp.create.create_transformer_from_parameters(net, hv_bus_id, lv_bus_id,
                                             sn_mva, voc_kv_hv, voc_kv_lv,
                                             vkr_percent, vk_percent, pfe_kw,
                                             i0_percent, shift_degree=shift_degree,
@@ -445,18 +445,18 @@ def convertGenDatatoPP(net, gen_list_of_str:list, slack_name:str):
         #print(f"Bus name: {bus_name}, Slack: {slack_name}")
         if slack_name == bus_name:
             # If the generator is a slack generator, we create a generator with the slack flag
-            pp.create_ext_grid(net, bus_id, vm_pu=v_imp_pu,
+            pp.create.create_ext_grid(net, bus_id, vm_pu=v_imp_pu,
                                 name=gen_name, in_service=br_status,
                                 max_p_mw=p_max_mw, min_p_mw=p_min_mw,
                                   max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar)
             
         else:
             if v_imp_pu > 0:
-                pp.create_gen(net, bus_id, p_mw, vm_pu=v_imp_pu, sn_mva=sn_mva, name=gen_name,
+                pp.create.create_gen(net, bus_id, p_mw, vm_pu=v_imp_pu, sn_mva=sn_mva, name=gen_name,
                             max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar,
                             max_p_mw=p_max_mw, min_p_mw=p_min_mw, in_service=br_status)
             else:
-                pp.create_sgen(net, bus_id, p_mw, q_mvar=q_mvar, sn_mva=sn_mva, name=gen_name,
+                pp.create.create_sgen(net, bus_id, p_mw, q_mvar=q_mvar, sn_mva=sn_mva, name=gen_name,
                                 in_service=br_status, max_p_mw=p_max_mw, min_p_mw=p_min_mw,
                                 max_q_mvar=q_max_mvar, min_q_mvar=q_min_mvar)
                 
@@ -614,7 +614,7 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
 
 
 
-    net = pp.create_empty_network(name=net_name, f_hz=f_nom, sn_mva=sn_pp_mva)
+    net = pp.create.create_empty_network(name=net_name, f_hz=f_nom, sn_mva=sn_pp_mva)
 
     # Create buses
     bus_list = data_dict.get('BUS', [])
