@@ -53,7 +53,7 @@ def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
             geo_lonlat = geodata_dict[bus_name]  # Get the geodata for the bus
         except KeyError:
             geo_lonlat = None  # If the bus name is not in the geodata dictionary, set it to None
-        print(geo_lonlat)
+        #print(geo_lonlat)
         bus_id = pp.create.create_bus(net, vn_kv, name=bus_name,index=bus_index,
                                geodata = geo_lonlat)
         if pload_mw != 0.0 or qload_tot_mvar != 0.0:
