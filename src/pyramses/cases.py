@@ -661,7 +661,8 @@ class cfg(object):
         if add_results:
             tmp_res_file =""
             for idx, row in self.ppnet.res_bus.iterrows():
-                tmp_res_file +=f"LFRESV {idx:>6} {row['vm_pu']:>6.6f} {float(row['va_degree'])*pi/180:>6.6f} ;\n"
+                bus_name = self.ppnet.bus.at[idx,'name']
+                tmp_res_file +=f"LFRESV {bus_name:>8} {row['vm_pu']:>6.6f} {float(row['va_degree'])*pi/180:>6.6f} ;\n"
             
             
             if os.path.isfile(tmpFile_path_str):
