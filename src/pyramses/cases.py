@@ -650,12 +650,33 @@ class cfg(object):
         else:
             warnings.warn('RAMSES: PandaPower network object is not set. Nothing to delete.')
 
-    def runPFC(self, add_results=False, tmpFile_path_str='lf_res_temp.dat'):
+    def runPFC(self, add_results=False, tmpFile_path_str='lf_res_temp.dat',
+               max_iteration='auto', algorithm='nr',
+               calculate_voltage_angles=True,
+               init='auto', tolerance_mva=1e-08,
+               trafo_model='t', trafo_loading='current',
+               enforce_q_lims=True, check_connectivity=True,
+               voltage_depend_loads=True, consider_line_temperature=False,
+               run_control=True, distributed_slack=False, tdpf=False, 
+               tdpf_delay_s=None,
+               ):
 
         if self.ppnet is None:
             self.UpdatePandaPowerNetwork()
         
-        runPowerFlowPP(self.ppnet)
+        runPowerFlowPP(self.ppnet, algorithm=algorithm, 
+                       calculate_voltage_angles=calculate_voltage_angles,
+                       init=init, max_iteration=max_iteration, 
+                       tolerance_mva=tolerance_mva,
+                       trafo_model=trafo_model, trafo_loading=trafo_loading,
+                       enforce_q_lims=enforce_q_lims,
+                       check_connectivity=check_connectivity,
+                       voltage_depend_loads=voltage_depend_loads, 
+                       consider_line_temperature=consider_line_temperature,
+                       run_control=run_control, 
+                       distributed_slack=distributed_slack, tdpf=tdpf,
+                       tdpf_delay_s=tdpf_delay_s
+                       )
 
         
         if add_results:

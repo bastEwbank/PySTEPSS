@@ -148,9 +148,16 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     # TO bus = High Voltage (HV) bus, STEPSS/Pandapower
 
     #Create the transformer in pandapower
-    
-    lv_bus_id = net.bus[net.bus.name == from_bus_name].index[0]
-    hv_bus_id = net.bus[net.bus.name == to_bus_name].index[0]
+    from_bus_id =net.bus[net.bus.name == from_bus_name].index[0]
+    to_bus_id   =net.bus[net.bus.name == to_bus_name].index[0]
+    vb_kv_from = net.bus.vn_kv[from_bus_id]
+    vb_kv_to   = net.bus.vn_kv[to_bus_id]
+    if vb_kv_from > vb_kv_to:
+        lv_bus_id = to_bus_id
+        hv_bus_id = from_bus_id
+    else:
+        lv_bus_id = from_bus_id
+        hv_bus_id = to_bus_id
 
     # print("HELLOOO net bus lv and hv")
     # print(net.bus)
@@ -726,7 +733,13 @@ def draw_labeled_multigraph(G, attr_name, ax=None,save_name=None):
     plt.close()  # Close the plot to free memory
 
 
-def runPowerFlowPP(net):
+def runPowerFlowPP(net, algorithm='nr', calculate_voltage_angles=True, 
+                   init='auto', max_iteration='auto', tolerance_mva=1e-08, 
+                   trafo_model='t', trafo_loading='current', 
+                   enforce_q_lims=True, check_connectivity=True, 
+                   voltage_depend_loads=True, consider_line_temperature=False, 
+                   run_control=True, distributed_slack=False, tdpf=False, 
+                   tdpf_delay_s=None,):
     """
     Run power flow on the given pandapower network.
 
@@ -736,5 +749,15 @@ def runPowerFlowPP(net):
     Returns:
     pandapowerNet: The updated pandapower network after running the power flow.
     """
-    pp.runpp(net,run_control=True, max_iteration=100)
+    pp.runpp(net, algorithm=algorithm, 
+             calculate_voltage_angles=calculate_voltage_angles,
+             init=init, max_iteration=max_iteration, tolerance_mva=tolerance_mva,
+             trafo_model=trafo_model, trafo_loading=trafo_loading,
+             enforce_q_lims=enforce_q_lims, 
+             check_connectivity=check_connectivity,
+             voltage_depend_loads=voltage_depend_loads,
+             consider_line_temperature=consider_line_temperature,
+             run_control=run_control, distributed_slack=distributed_slack,
+             tdpf=tdpf, tdpf_delay_s=tdpf_delay_s
+             )
     return
