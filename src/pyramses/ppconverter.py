@@ -507,9 +507,11 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
         #Read the file
         with open(datfile, 'r') as file:
             data_str += file.read() #string with all the text from the file
+            data_str +='\n'#to be sure the start line of one file does not goes 
+                           #as a comment of the previous line, ex: "SLACK B ;FNOM 50 ;" on the same line
     #print (f"Data from {datfile}:\n{data_str}\n")
     #print(f"Type of reading{type(data_str)}\n")
-    
+    #print(f"data_str\n{data_str}")
     #Remove lines of comments that start with # and solvers options that start with $
     data_lines = data_str.splitlines()
     data_lines = [line for line in data_lines if not line.startswith('#')]
@@ -616,8 +618,12 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     sn_pp_mva = 100.0  # Default base power in MVA for pandapower
 
     #Get grid nominal frequency :
-    f_nom_str = (data_dict.get('FNOM', ["50"])[0]).strip()  # Default to 50 if not found
-    f_nom = float(f_nom_str) if f_nom_str else 50.0  # Convert to float, default to 50.0 if empty
+    f_str=data_dict.get('FNOM', ["50"])
+    if len(f_str)==0:
+        f_nom_str =50.0 # Convert to float, default to 50.0 if empty
+    else:   
+        f_nom_str = (f_str[0]).strip()  # Default to 50 if not found
+        f_nom = float(f_nom_str) if f_nom_str else 50.0  
 
 
 
