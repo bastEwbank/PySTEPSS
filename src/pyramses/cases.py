@@ -10,10 +10,9 @@ from pathlib import Path
 import time
 from numpy import pi as pi   
 #from pandapower import pandapowerNet
-from .ppconverter import convertDataToPandaPowerNetwork, PlotNetSimple, PlotTopology,runPowerFlowPP
- 
 
-from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
+from pyramses.ppconverter import convertDataToPandaPowerNetwork, PlotNetSimple, PlotTopology,runPowerFlowPP
+from pyramses.globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
 warnings.showwarning = CustomWarning
 

@@ -14,8 +14,8 @@ from scipy.sparse import coo_matrix
 
 import subprocess
 
-from .cases import cfg
-from .globals import RAMSESError, CustomWarning, __libdir__, wrapToList
+from pyramses.cases import cfg
+from pyramses.globals import RAMSESError, CustomWarning, __libdir__, wrapToList
 
 class sim(object):
     """Simulation class."""

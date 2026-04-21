@@ -11,9 +11,19 @@ import os
 def read_file(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-install_requires = ['matplotlib','scipy','numpy','mkl==2024.2.2','pandapower[all]>=3.1.1']
+install_requires = ['matplotlib','scipy','numpy>=1.20.0','mkl==2024.2.2','pandapower[all]==3.2.1']
 
-from pyramses import __version__, __author__, __email__, __status__, __url__, __name__
+#from pyramses import __version__, __author__, __email__, __status__, __url__, __name__
+
+__name__ = "pyramses"
+__version__ = '0.0.50'
+__author__ = "Petros Aristidou"
+__copyright__ = "Petros Aristidou"
+__license__ = "Petros Aristidou"
+__maintainer__ = "Petros Aristidou"
+__email__ = "apetros@pm.me"
+__url__ = "https://pyramses.sps-lab.org"
+__status__ = "3 - Alpha"
 
 setup(
     name=__name__,
@@ -28,6 +38,7 @@ setup(
     long_description_content_type='text/x-rst',
     packages=find_packages(),
     install_requires=install_requires, 
+    python_requires=">=3.8",
     package_data={
         'pyramses': ['libs/*.dll', 'libs/*.so', 'libs/*.h'],
     },

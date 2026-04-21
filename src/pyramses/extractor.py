@@ -10,7 +10,7 @@ from typing import NamedTuple
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .globals import RAMSESError, CustomWarning, wrapToList
+from pyramses.globals import RAMSESError, CustomWarning, wrapToList
 
 warnings.showwarning = CustomWarning
 

@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import warnings
 
-from .globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
+from pyramses.globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
 warnings.showwarning = CustomWarning
 
