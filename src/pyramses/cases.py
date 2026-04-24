@@ -605,7 +605,7 @@ class cfg(object):
         else:
             warnings.warn('RAMSES: Command file path is not set. Nothing to delete.')
 
-    def UpdatePandaPowerNetwork(self):
+    def UpdatePandaPowerNetwork(self,name='pyramses_network'):
         """Update the PandaPower network object
         or generate a new one if it does not exist.
         
@@ -614,7 +614,7 @@ class cfg(object):
         
         """
 
-        self.ppnet = convertDataToPandaPowerNetwork(self._dataset)
+        self.ppnet = convertDataToPandaPowerNetwork(self._dataset, net_name=name)
     
     def addPandaPowerNetwork(self, ppnet):
         """Add an already existing PandaPower network object to 
