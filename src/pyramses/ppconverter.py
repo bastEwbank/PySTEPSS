@@ -620,7 +620,7 @@ def convertDataToPandaPowerNetwork(datfiles_list:list,net_name='pyramses_network
     #Get grid nominal frequency :
     f_str=data_dict.get('FNOM', ["50"])
     if len(f_str)==0:
-        f_nom_str =50.0 # Convert to float, default to 50.0 if empty
+        f_nom =50.0 # Convert to float, default to 50.0 if empty
     else:   
         f_nom_str = (f_str[0]).strip()  # Default to 50 if not found
         f_nom = float(f_nom_str) if f_nom_str else 50.0  

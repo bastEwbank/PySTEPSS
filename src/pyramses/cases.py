@@ -626,7 +626,7 @@ class cfg(object):
         """
         self.ppnet = ppnet
     
-    def getPandaPowerNetwork(self):
+    def getPandaPowerNetwork(self,name='pyramses_network'):
         """Get the PandaPower network object
         
         :returns: PandaPower network object
@@ -634,7 +634,7 @@ class cfg(object):
         
         """
         if self.ppnet is None:
-            self.UpdatePandaPowerNetwork()
+            self.UpdatePandaPowerNetwork(name=name)
         return self.ppnet
     
     def deletePandaPowerNetwork(self):
