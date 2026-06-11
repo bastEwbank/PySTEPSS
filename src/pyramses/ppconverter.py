@@ -58,7 +58,7 @@ def convertBusDatatoPP(net, bus_list_of_str:list, geodata_dict:dict={}):
                                geodata = geo_lonlat)
         if pload_mw != 0.0 or qload_tot_mvar != 0.0:
             pp.create.create_load(net, bus_id, pload_mw, q_mvar=qload_tot_mvar,
-                        name='load_'+bus_name)
+                        name='L'+bus_name)
             
         if bshunt_mvar != 0.0 :
             # Create a shunt element if there is a shunt admittance
