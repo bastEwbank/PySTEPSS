@@ -1,9 +1,16 @@
-About
------
+PyRAMSES (Packaging Compatibility README)
+=========================================
 
-PyRAMSES is a Python module that facilitates the use of the dynamic simulator RAMSES. The module provides basic functionality like defining test-cases, running a simulation, extracting information, etc. As well as more advanced integration of the simulator into the remaining Python code.
+The canonical project README is maintained at:
 
-Please check the documentation under `https://pyramses.sps-lab.org <https://pyramses.sps-lab.org>`_.
+- ../README.rst
+
+Packaging now reads from ../README.rst first (see setup.py), with this file kept only as a fallback for legacy build contexts that copy only the src/ directory.
+
+Project homepage and full docs:
+
+- https://stepss.sps-lab.org/pyramses/
+- https://github.com/SPS-L/stepss-pyramses
 
 Models included in current version:
 -----------------------------------

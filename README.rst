@@ -1,3 +1,5 @@
+.. image:: logo-stepss-light.svg
+
 |PyPI version| |PyPI status|
 
 .. |PyPI version| image:: https://img.shields.io/pypi/v/pystepss-ulg

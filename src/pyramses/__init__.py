@@ -2,23 +2,23 @@
 # -*- coding: utf-8 -*-
 """Python library for RAMSES dynamic simulator."""
 
-__name__ = "pyramses"
-__version__ = '0.0.50'
-__author__ = "Petros Aristidou"
+__package_name__ = "pystepss-ulg"
+__version__ = '0.0.52'
+__author__ = "Petros Aristidou and Bastien Ewbank"
 __copyright__ = "Petros Aristidou"
-__license__ = "Petros Aristidou"
-__maintainer__ = "Petros Aristidou"
-__email__ = "apetros@pm.me"
-__url__ = "https://pyramses.sps-lab.org"
+__license__ = "Apache-2.0"
+__maintainer__ = "Bastien Ewbank"
+__email__ = "bastien.ewbank@uliege.be"
+__url__ = "https://stepss.sps-lab.org"
 __status__ = "3 - Alpha"
 
 import sys
 from warnings import warn
 
-from pyramses.cases import cfg
-from pyramses.globals import __runTimeObs__, __which
-from pyramses.simulator import sim, sim_exe 
-from pyramses.extractor import extractor, curplot, cur
+from .cases import cfg
+from .globals import __runTimeObs__, __which
+from .simulator import sim, sim_exe 
+from .extractor import extractor, curplot, cur
 
 
 if sys.platform in ('win32', 'cygwin'):
