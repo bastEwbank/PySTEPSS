@@ -1,0 +1,38 @@
+# synchronous machine
+
+#           name bus FP   FQ   P    Q    NOM  Pnom  H   D   IBRATIO
+SYNC_MACH   G5   5   1.   1.   0.   0.   500. 460.  4.  0.  2.05
+#  mod_type Xl    Xd    X'd   X"d   Xq   X'q   X"q   m    n       Ra   T'do  T"do  T'qo  T"qo
+    XT      0.15  2.2   0.3   0.2   2.   0.4   0.2   0.   6.0257  0.   7.00  0.05  1.5   0.05
+# EXC  model_name      G    Ta   Tb    Te   vfmin  vfmax
+  EXC  exc_GENERIC3    70.  1.   1.   0.40   0.     5.
+# Kpss   Tw    T1     T2      T3     T4      C
+  50.    5.   0.323  0.0138  0.323  0.0138  0.06 
+# if1lim  if2lim  Toel    Koel   L1    L2    L3
+   2.90    1.00    8.0     2.0  -1.10  0.10  0.20
+# TOR  model_name        sigma  Tmes  Tsm  zdotmin zdotmax  zmin  zmax  Thp  fhp  Tr   fmp  Tlp
+  TOR  THERMAL_GENERIC1  0.04   0.10  0.40  -0.05    0.05    0.0   1.0  0.3  0.4  5.0  0.3  0.3  ;
+
+# induction machines
+
+#               name          bus  FP   FQ   P   Q   SNOM   RS    LLS   LSR   RR    LLR    H    A    B   LF
+INJEC INDMACH1  Small_Motor   2    0.2  0.2  0.  0.  0.    0.031 0.100 3.200 0.018 0.180  0.7  0.5  0.0  0.6 ;
+INJEC INDMACH1  Large_Motor   2    0.2  0.2  0.  0.  0.    0.013 0.067 3.800 0.009 0.170  1.5  0.5  0.0  0.8 ;
+
+# voltage dependent load
+
+#               name            bus   FP   FQ   P   Q   Dp  a1   alpha1  a2  alpha2  alpha3  Dq   b1   beta1  b2  beta2 beta3
+INJEC vfd_load  Impedance_Load  2     0.6  0.6  0.  0.  0.  1.0   2.0    0.   0.      0.     0.   1.0   2.0   0.   0.    0.  
+#               Vinit  Vlow  foption  Tmes
+                 0.    0.7     0      0.1  ;
+
+# load tap changer
+
+#        name transfo  ctld bus  dir  nmin  nmax  nbpos tol   delay1 delay2
+DCTL LTC 2-3  2-3      2         -1   88.   120.  33    0.01    25     10   ;
+
+# Thevenin equivalent
+
+INJEC THEVEQ EQUIV1 1  1. 1. 0. 0. 6000. ;
+
+FNOM 50 ;
