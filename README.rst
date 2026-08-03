@@ -1,4 +1,7 @@
-.. image:: logo-stepss-light.svg
+
+.. image:: logo-stepss-dark.svg
+   :align: center
+   :alt: Logo PySTEPSS
 
 |PyPI version| |PyPI status|
 
@@ -19,7 +22,7 @@ Scripted power system dynamic simulation and AC power-flow analysis using
 
 PyRAMSES is a Python interface to the `RAMSES <https://stepss.sps-lab.org/getting-started/overview/>`_ dynamic simulator — part of the `STEPSS <https://stepss.sps-lab.org/>`_ power system simulation platform. It covers the full simulation workflow: defining test cases, launching simulations, querying system state at runtime, and extracting and plotting results.
 
-PySTEPSS is a wrapper PyRAMSES and pandapower created for educationnal purpose 
+PySTEPSS is a wrapper of PyRAMSES and pandapower created for educationnal purpose 
 at the Univeristy of Liège.
 
 RAMSES (RApid Multithreaded Simulation of Electric power Systems) simulates the dynamic evolution of power systems under the phasor approximation, using Backward Euler, Trapezoidal, or BDF2 integration with OpenMP parallelism.

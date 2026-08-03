@@ -65,7 +65,7 @@ setup(
         "Development Status :: " + __status__,
         "Intended Audience :: Developers",
         "Environment :: Console",
-        "License :: OSI Approved :: Apache Software License",
+        #"License :: OSI Approved :: Apache Software License",
         "Programming Language :: Python :: 3"
     ],
     entry_points={
