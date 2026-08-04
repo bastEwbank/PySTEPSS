@@ -99,9 +99,13 @@ def convertLineDatatoPP(net, line_list_of_str:list, length_km_dict:dict={}):
             raise ValueError(f"Invalid line definition: {line_str}. Expected 8 components.")
         
         #Create the line in pandapower
-        from_bus_id = net.bus[net.bus.name == from_bus_name].index[0]
-        to_bus_id = net.bus[net.bus.name == to_bus_name].index[0]
-        
+        try :
+            from_bus_id = net.bus[net.bus.name == from_bus_name].index[0]
+            to_bus_id = net.bus[net.bus.name == to_bus_name].index[0]
+        except:
+            raise ValueError(f"There is probably a mismatch between bus name" 
+                             f" and line from/to bus name in '.dat' files.\n"
+                             f" Line in question {line_str}.")
         # #check that there is not already a line between the two buses
         # existing_lines = net.line[(net.line.from_bus == from_bus_id) & (net.line.to_bus == to_bus_id)]
         # if not existing_lines.empty:
@@ -148,8 +152,14 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     # TO bus = High Voltage (HV) bus, STEPSS/Pandapower
 
     #Create the transformer in pandapower
-    from_bus_id =net.bus[net.bus.name == from_bus_name].index[0]
-    to_bus_id   =net.bus[net.bus.name == to_bus_name].index[0]
+    try :
+        from_bus_id =net.bus[net.bus.name == from_bus_name].index[0]
+        to_bus_id   =net.bus[net.bus.name == to_bus_name].index[0]
+    except:
+        raise ValueError(f"There is probably a mismatch between bus name" 
+                         f" and tfo from/to bus name in '.dat' files.\n"
+                         f" Buses in question '{from_bus_name}' and '{to_bus_name}'.")
+    
     vb_kv_from = net.bus.vn_kv[from_bus_id]
     vb_kv_to   = net.bus.vn_kv[to_bus_id]
     if vb_kv_from > vb_kv_to:

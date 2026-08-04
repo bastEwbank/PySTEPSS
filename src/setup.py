@@ -34,7 +34,7 @@ def read_metadata():
     return {name: grab(name) for name in
             ('version', 'author', 'email', 'status', 'url', 'package_name')}
 
-install_requires = ['matplotlib','scipy','numpy>=1.20.0','mkl==2024.2.2','pandapower[all]==3.2.1']
+install_requires = ['matplotlib','scipy','numpy>=1.20.0','mkl==2024.2.2','pandapower[all]==3.3.0']
 
 _meta = read_metadata()
 __version__ = _meta['version']

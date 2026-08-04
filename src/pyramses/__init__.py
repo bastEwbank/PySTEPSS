@@ -3,7 +3,7 @@
 """Python library for RAMSES dynamic simulator."""
 
 __package_name__ = "pystepss-ulg"
-__version__ = '0.0.52'
+__version__ = '0.0.54'
 __author__ = "Petros Aristidou and Bastien Ewbank"
 __copyright__ = "Petros Aristidou"
 __license__ = "Apache-2.0"
@@ -19,7 +19,8 @@ from .cases import cfg
 from .globals import __runTimeObs__, __which
 from .simulator import sim, sim_exe 
 from .extractor import extractor, curplot, cur
-
+from .extractordf import ramses_extractor_to_df
+from .plot import pf_res_plotly_custom
 
 if sys.platform in ('win32', 'cygwin'):
     checkGnuplot = __which('gnuplot.exe')

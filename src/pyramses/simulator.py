@@ -50,6 +50,10 @@ class sim(object):
                 # if (not find_library('iomp5')):
                 # self._omplib = ctypes.CDLL(os.path.join(__libdir__, "libiomp5.so"), mode=ctypes.RTLD_GLOBAL)
                 # self._mkllib = ctypes.CDLL(os.path.join(__libdir__, "libmkl.so"), mode=ctypes.RTLD_GLOBAL)
+                # if sys.platform.startswith('linux'):
+                #     mkl_path = os.path.join(sys.prefix, 'lib', 'libmkl_rt.so.2')
+                #     if os.path.exists(mkl_path):
+                #         ctypes.CDLL(mkl_path, mode=ctypes.RTLD_GLOBAL)
                 self._ramseslib = ctypes.CDLL(os.path.join(ramLibDir, "ramses.so"))
         except OSError as e:
             raise ImportError('RAMSES: ', e)

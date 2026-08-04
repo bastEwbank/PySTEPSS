@@ -1,5 +1,4 @@
 import pyramses
-#import pandapower as pp
 from pathlib import Path
 
 ###CONFIGURE THE CASE STUDY HERE
@@ -49,6 +48,23 @@ net=case.runPFC(add_results=True,
                 tmpFile_path_str=str(case_dir / lf_res_name),
                 max_iteration=1000)
 
+fig=pyramses.pf_res_plotly_custom(net, 
+                                  on_map= False,
+                                  filename= f"pf_res_{case_name}.html",
+                                  map_style= 'carto-voyager',
+                                  climits_volt= (0.9, 1.1),
+                                  climits_lines= (0, 100),
+                                  line_width = 3,
+                                  bus_size= 10,
+                                  bus_size_min= 10,
+                                  bus_size_max= 30,
+                                  bus_marker_line_width = 3,
+                                  cpos_volt = 1.0,
+                                  cpos_lines = 1.1,
+                                  cmap_volt= [[0, "#F825FF"], [0.2, "#F825FF"], [0.5, "#000000"],[0.8, "#FF0000"], [1, '#ff0000']],
+                                  cmap_lines=[[0, '#000000'],[0.2, "#ffd000"], [0.5, "#ff7b00"], [1, '#ff0000']],
+                                  )
+exit()
 ###RUN DYNAMIC SIMULATION
 sim=pyramses.sim()
 ret=sim.execSim(case)
@@ -57,3 +73,8 @@ print(ret)
 ### EXTRACT RESULTS FROM FILE TO NUMPY ARRAY OR DATAFRAME
 data = pyramses.extractor(case.getTrj())
 print(data)
+
+
+data._busname
+
+
