@@ -1,11 +1,14 @@
 import pandapower as pp
-from numpy import pi 
+from numpy import pi
+import numpy as np
+import pandas as pd
 import networkx as nx
 import itertools as it
 import matplotlib.pyplot as plt
 import os 
 from pathlib import Path
 import warnings
+
 
 from pyramses.globals import RAMSESError, __runTimeObs__, CustomWarning, silentremove
 
@@ -162,39 +165,29 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     
     vb_kv_from = net.bus.vn_kv[from_bus_id]
     vb_kv_to   = net.bus.vn_kv[to_bus_id]
+    
     if vb_kv_from > vb_kv_to:
-        lv_bus_id = to_bus_id
-        hv_bus_id = from_bus_id
-    else:
-        lv_bus_id = from_bus_id
-        hv_bus_id = to_bus_id
+        raise ValueError(f"vb_kv_from > vb_kv_to : "
+                         f"By convention Stepss transformer should be oriented "
+                         f"with FROM side at the lowest bus voltage, check .dat files.")
 
-    # print("HELLOOO net bus lv and hv")
-    # print(net.bus)
-    # print(lv_bus_id)
-    # print(hv_bus_id)
+    hv_bus_id = to_bus_id
+    lv_bus_id = from_bus_id
 
-    vb_kv_hv = net.bus.vn_kv[hv_bus_id]  # High voltage bus voltage
-    vb_kv_lv = net.bus.vn_kv[lv_bus_id]  # Low voltage bus voltage
-    # print(f"High voltage bus {to_bus_name} voltage: {vb_kv_hv} kV")
-    # print(f"Low voltage bus {from_bus_name} voltage: {vb_kv_lv} kV")
-    # print((type(vb_kv_hv), type(vb_kv_lv)))
-    voc_kv_lv= vb_kv_lv
-    voc_kv_hv= n_per/100 * (voc_kv_lv/vb_kv_lv) * vb_kv_hv  # Voltage at the HV side in kV
-    # print(f"Voltage at HV side: {voc_kv_hv} kV")
-    # print(f"Voltage at LV side: {voc_kv_lv} kV")
-    # print(f"Ratio of transformer: {n_per}, from {vb_kv_lv} kV to {vb_kv_hv} kV")
+    voc_kv_lv= vb_kv_from #arbitrary choice to reference according LV side
+    voc_kv_hv= n_per/100 * (voc_kv_lv/vb_kv_from) * vb_kv_to   # Voltage at the HV side in kV
+    
 
     #Short-Circuit Info
-    r_pu = r_from_per_base /100 #*(vb_kv_lv/voc_kv_lv)**2
-    x_pu = x_from_per_base /100 #*(vb_kv_lv/voc_kv_lv)**2 #From Stepss documentation, R and X are the resistances and reactances at the low voltage side, in pu
+    r_pu_tfo = r_from_per_base /100 #*(vb_kv_lv/voc_kv_lv)**2
+    x_pu_tfo = x_from_per_base /100 #*(vb_kv_lv/voc_kv_lv)**2 #From Stepss documentation, R and X are the resistances and reactances at the low voltage side, in pu
     
-    z_pu = complex(r_pu, x_pu)  # Impedance in pu
-    z_mag_pu = abs(z_pu)  # Magnitude of the impedance in pu
+    z_pu_tfo = r_pu_tfo+ 1j*x_pu_tfo  # Impedance phasor in pu
+    z_pu_tfo_abs = np.abs(z_pu_tfo)  # Magnitude of the impedance in pu
 
     #Pandapower Attributes
-    vkr_percent = r_pu *100  # Convert to percentage, as per Stepss documentation
-    vk_percent = z_mag_pu * 100  #* (sn_mva) / sn_mva_net  # Convert to percentage
+    vkr_percent = r_pu_tfo    * 100  #* sn_mva / sn_mva_net   # Convert to percentage, as per Stepss documentation
+    vk_percent  = z_pu_tfo_abs * 100  #* sn_mva /sn_mva_net #* (sn_mva) / sn_mva_net  # Convert to percentage
 
     
     #Open-Circuit Info
@@ -207,19 +200,31 @@ def createTfo(net,from_bus_name:str, to_bus_name:str, r_from_per_base:float,
     y_mag_pu = abs(y_pu)
 
     #Pandapower Attributes
-    i0_percent = y_mag_pu * 100  
+    i0_percent = 0.0#y_mag_pu * 100  
     pfe_kw = 0.0  # Power loss in kW, Conductance neglected in STEPSS, set to 0
 
 
-    return pp.create.create_transformer_from_parameters(net, hv_bus_id, lv_bus_id,
-                                            sn_mva, voc_kv_hv, voc_kv_lv,
-                                            vkr_percent, vk_percent, pfe_kw,
-                                            i0_percent, shift_degree=shift_degree,
-                                            tap_side=tap_side, tap_neutral=tap_neutral,
-                                            tap_pos=tap_neutral, tap_changer_type='Ratio',
-                                            tap_max=tap_max, tap_min=tap_min,
-                                            tap_step_percent=tap_step_percent,
-                                            name=transfo_name, in_service=in_service,
+    return pp.create.create_transformer_from_parameters(net,
+                                                        hv_bus_id,
+                                                        lv_bus_id,
+                                                        sn_mva,
+                                                        voc_kv_hv,
+                                                        voc_kv_lv,
+                                                        vkr_percent,
+                                                        vk_percent,
+                                                        pfe_kw,
+                                                        i0_percent,
+                                                        
+                                                        shift_degree=shift_degree,
+                                                        tap_side=tap_side,
+                                                        tap_neutral=tap_neutral,
+                                                        tap_pos=tap_neutral,
+                                                        tap_changer_type='Ratio',
+                                                        tap_max=tap_max,
+                                                        tap_min=tap_min,
+                                                        tap_step_percent=tap_step_percent,
+                                                        name=transfo_name,
+                                                        in_service=in_service,
                                             )
 
 
@@ -325,63 +330,71 @@ def convertTransfoDatatoPP(net, transfo_list_of_str:list, trfo_list_of_str:list,
         #print(f"Load Tap Changer components: {ltc_v_components}")
         if len(ltc_v_components) == 7 or len(ltc_v_components) == 9:
             ltc_name = ltc_v_components[0].strip()
-            con_bus_name = ltc_v_components[1].strip() #not used in pandapower, used by ramses controller
+            con_bus_name = ltc_v_components[1].strip()
             n_first_per = float(ltc_v_components[2].strip())
             n_last_per = float(ltc_v_components[3].strip())
             nb_pos = int(ltc_v_components[4].strip())
-            tol_v_pu = float(ltc_v_components[5].strip())# not used in pandapower, used by ramses controller
-            v_des_pu = float(ltc_v_components[6].strip())# not used in pandapower, used by ramses controller
+            tol_v_pu = float(ltc_v_components[5].strip())
+            v_des_pu = float(ltc_v_components[6].strip())
 
             #Get the pp transformer characteristics 
-            # print(net.trafo)
-            transfo_row = net.trafo[net.trafo.name == ltc_name]
-            # print(transfo_row)
+            bool_idx_ltc = net.trafo.name==ltc_name
+            transfo_row = net.trafo.loc[bool_idx_ltc]
             tfo_idx   = transfo_row.index[0]
-            # print(tfo_idx)
-            # print(f"Transformer row: {transfo_row}")
-            # print(f"type of transfo_row: {type(transfo_row)}")
+            
             if transfo_row.empty:
                 raise ValueError(f"Transformer {ltc_name} not found in pandapower network.")
             
             voc_kv_hv = transfo_row['vn_hv_kv'].values[0]  # High voltage side voltage
             voc_kv_lv = transfo_row['vn_lv_kv'].values[0]  # Low voltage side voltage
             
-            #Create the transformer in pandapower
             lv_bus_id = transfo_row['lv_bus'].values[0]
             hv_bus_id = transfo_row['hv_bus'].values[0]
-            # print(lv_bus_id)
-            # print(hv_bus_id)
-
-            vb_kv_hv = net.bus.vn_kv[hv_bus_id]  # High voltage bus voltage
-            vb_kv_lv = net.bus.vn_kv[lv_bus_id]  # Low voltage bus voltage
+            
+            vb_kv_hv = net.bus.loc[hv_bus_id,'vn_kv']  # High voltage bus voltage
+            vb_kv_lv = net.bus.loc[lv_bus_id,'vn_kv']  # Low voltage bus voltage
 
             n_per = ((voc_kv_hv/vb_kv_hv) / (voc_kv_lv/vb_kv_lv)) * 100  # Transformer ratio in percentage 
+            
             # print(n_per)
             # print(type(n_per))
             #Compute Tap position of the ltc
             
                 
-            tap_side = 'hv' #ATTENTION Hardcoded
+            tap_side = 'hv' # not the con bus of stepss but hardcoded 'To' bus by convention 
+
             tap_min = 1
-            tap_step_percent = (n_last_per - n_first_per) / (nb_pos-1)  # Tap step in percentage
-            tap_neutral = int(tap_min + (n_per-n_first_per)/(tap_step_percent) )  # Maximum tap position
-            tap_max = int(tap_min + (nb_pos - 1)*tap_step_percent)  # Maximum tap position
+            tap_step_percent = (n_last_per - n_first_per) / (nb_pos-1)
+            tap_max = int(tap_min + (nb_pos - 1)*tap_step_percent)
+            tap_pos = int(tap_min + (n_per-n_first_per)/(tap_step_percent) )
+            
+            tap_neutral =  int(np.round((100-n_per)/(tap_step_percent)+tap_pos)) # Maximum tap position
+              # Maximum tap position
             #print (f"Tap position: {tap_neutral} for transformer {trafo_name}")
 
             #Update the transformer parameters in pandapower
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_side'] = tap_side
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_neutral'] = int(tap_neutral)
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_pos'] = int(tap_neutral)
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_max'] = int(tap_max)
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_min'] = int(tap_min)
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_step_percent'] = tap_step_percent
-            net.trafo.loc[net.trafo.name==ltc_name,'tap_changer_type'] = 'Ratio' #Harcoded from comparison with pp example
-            
-
+            net.trafo.loc[tfo_idx,'vn_hv_kv'] = vb_kv_hv#reset opencircuit voltage
+            net.trafo.loc[tfo_idx,'tap_side'] = tap_side
+            net.trafo.loc[tfo_idx,'tap_neutral'] = int(tap_neutral)
+            net.trafo.loc[tfo_idx,'tap_pos'] = int(tap_pos)
+            net.trafo.loc[tfo_idx,'tap_max'] = int(tap_max)
+            net.trafo.loc[tfo_idx,'tap_min'] = int(tap_min)
+            net.trafo.loc[tfo_idx,'tap_step_percent'] = tap_step_percent
+            net.trafo.loc[tfo_idx,'tap_step_degree']  = 0
+            net.trafo.loc[tfo_idx,'tap_changer_type'] = 'Ratio' #Harcoded from comparison with pp example 
 
             vlim_up_pu=v_des_pu + tol_v_pu
             vlim_low_pu= v_des_pu - tol_v_pu
-            pp.control.DiscreteTapControl(net,tfo_idx, vlim_low_pu, vlim_up_pu, tol_v_pu=0.0001)
+            if hv_bus_id==con_bus_name:
+                side ='hv'
+            else:
+                side='lv'
+            pp.control.DiscreteTapControl(net,
+                                          tfo_idx,
+                                          vlim_low_pu,
+                                          vlim_up_pu,
+                                          side=side,
+                                          tol=tol_v_pu*0.1)
 
             # hv_bus_name = net.bus.loc[hv_bus_id]['name']
             # lv_bus_name = net.bus.loc[lv_bus_id]['name']
@@ -765,6 +778,11 @@ def runPowerFlowPP(net, algorithm='nr', calculate_voltage_angles=True,
     Returns:
     pandapowerNet: The updated pandapower network after running the power flow.
     """
+    
+    bool_idx = net.trafo['tap_side'] == 'hv'
+    init_tap = net.trafo.loc[bool_idx,'tap_pos']
+    
+    
     pp.runpp(net, algorithm=algorithm, 
              calculate_voltage_angles=calculate_voltage_angles,
              init=init, max_iteration=max_iteration, tolerance_mva=tolerance_mva,
@@ -776,4 +794,35 @@ def runPowerFlowPP(net, algorithm='nr', calculate_voltage_angles=True,
              run_control=run_control, distributed_slack=distributed_slack,
              tdpf=tdpf, tdpf_delay_s=tdpf_delay_s
              )
+    
+    #print which tap transfo has to change
+    end_tap = net.trafo.loc[bool_idx,'tap_pos']
+    changed_tap = end_tap != init_tap 
+    if changed_tap.sum()>0:
+        df_tap=pd.DataFrame(columns=['tfo_name','init','end','tap_max',
+                                     'ratio_init','ratio_end',
+                                     ])
+        df_tap['init']=init_tap[changed_tap]
+        df_tap['end']=end_tap[changed_tap]
+        
+        changed_idx =init_tap[changed_tap].index
+        df_tap['tfo_name']=net.trafo.loc[changed_idx,'name']
+        df_tap['tap_max']=net.trafo.loc[changed_idx,'tap_max']
+        
+
+        
+        #from pp tfo docs - Ratio tap changer
+        n_init = 1 +((init_tap.to_numpy()-
+                      net.trafo.loc[changed_idx,'tap_neutral'].to_numpy())*
+                     net.trafo.loc[changed_idx,'tap_step_percent'].to_numpy()/100)
+        
+        n_end = 1 +((end_tap.to_numpy()-
+                     net.trafo.loc[changed_idx,'tap_neutral'].to_numpy())*
+                     net.trafo.loc[changed_idx,'tap_step_percent'].to_numpy()/100)
+        
+        df_tap['ratio_init'] = n_init
+        df_tap['ratio_end']  = n_end
+        
+        print(f"Some Tap changers changed tap position :\n {df_tap}")
+    
     return

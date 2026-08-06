@@ -5,7 +5,7 @@ from pathlib import Path
 case_name  = "5bus"
 case_dir   = Path().cwd()/case_name 
 
-data_files = ['lf2',
+data_files = ['lf1',
               'solveroptions',
               'dyn',
              ] 
@@ -64,7 +64,7 @@ fig=pyramses.pf_res_plotly_custom(net,
                                   cmap_volt= [[0, "#F825FF"], [0.2, "#F825FF"], [0.5, "#000000"],[0.8, "#FF0000"], [1, '#ff0000']],
                                   cmap_lines=[[0, '#000000'],[0.2, "#ffd000"], [0.5, "#ff7b00"], [1, '#ff0000']],
                                   )
-exit()
+
 ###RUN DYNAMIC SIMULATION
 sim=pyramses.sim()
 ret=sim.execSim(case)
@@ -72,9 +72,7 @@ print(ret)
 
 ### EXTRACT RESULTS FROM FILE TO NUMPY ARRAY OR DATAFRAME
 data = pyramses.extractor(case.getTrj())
-print(data)
-
-
-data._busname
-
+results_df= pyramses.ramses_extractor_to_df(data,case)
+print(results_df.head())
+print(results_df.tail())
 
